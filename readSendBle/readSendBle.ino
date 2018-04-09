@@ -127,6 +127,8 @@ void setup() {
   }
   digitalWrite(SENSOR_PIN, HIGH);
   delay(2000);
+  openValve();
+  delay(2000);
   digitalWrite(SENSOR_PIN, LOW);
 
 }
