@@ -41,21 +41,6 @@ void error(const __FlashStringHelper*err) {
 }
 /***********************************************************************/
 
-
-int n = 0;
-long arr[4];
-long output_P, output_T;
-float P = 0, T = 0;
-char sendMsg[BUFSIZE+1];
-
-enum STATUS {
-  NORMAL,
-  COMM,
-  STALE,
-  DIAG
-};
-
-
 void setup() {
   // basic setup
   Wire.begin();
@@ -66,30 +51,24 @@ void setup() {
   
 
   // ble setup
-  while (!Serial);  // required for Flora & Micro
-  delay(500);
-
-  Serial.begin(115200);
-  Serial.println(F("Adafruit Bluefruit Command Mode Example"));
-  Serial.println(F("---------------------------------------"));
-
+  
   /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
+  Serial.println("Initialising the Bluefruit LE module: ");
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
-  Serial.println( F("OK!") );
-
-  if ( FACTORYRESET_ENABLE )
-  {
-    /* Perform a factory reset to make sure everything is in a known state */
-    Serial.println(F("Performing a factory reset: "));
-    if ( ! ble.factoryReset() ){
-      error(F("Couldn't factory reset"));
-    }
-  }
+  Serial.println("OK!");
+//
+//  if ( FACTORYRESET_ENABLE )
+//  {
+//    /* Perform a factory reset to make sure everything is in a known state */
+//    Serial.println(F("Performing a factory reset: "));
+//    if ( ! ble.factoryReset() ){
+//      error(F("Couldn't factory reset"));
+//    }
+//  }
 
   /* Disable command echo from Bluefruit */
   ble.echo(false);
@@ -97,10 +76,6 @@ void setup() {
   Serial.println("Requesting Bluefruit info:");
   /* Print Bluefruit information */
   ble.info();
-
-  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
-  Serial.println(F("Then Enter characters to send to Bluefruit"));
-  Serial.println();
 
   ble.verbose(false);  // debug info is a little annoying after this point!
 
@@ -119,33 +94,33 @@ void setup() {
     Serial.println(F("******************************"));
   }
 
-
-  // one time test
-  for (int i = 0; i < 3; i++) {
-    pumpUp();
-    sendMsg();
-  }
-  digitalWrite(SENSOR_PIN, HIGH);
-  delay(2000);
-  openValve();
-  delay(2000);
-  digitalWrite(SENSOR_PIN, LOW);
-
 }
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  if (checkMsg()) {
+    closeValve();
+    delay(100);
+    for (int i = 0; i < 3; i++) {
+      float P = pumpUp(1500, 1000);
+      sendMsg(P);
+    }
+    delay(2000);
+    openValve();
+    delay(10000);
+  }
+  delay(100);
 }
 
 
-void pumpUp() {
+float pumpUp(int pumpT, int stopT) {
   closeValve();
   digitalWrite(PUMP_PIN, HIGH);
-  delay(1500);
+  delay(pumpT);
   digitalWrite(PUMP_PIN, LOW);
-  readPressure();
-  delay(1000);
+  float P = readPressure();
+  delay(stopT);
+  return P;
 }
 
 void openValve() {
@@ -156,8 +131,11 @@ void closeValve() {
   digitalWrite(VALVE_PIN, LOW);
 }
 
-void readPressure() {
-  Wire.requestFrom(40, 4);
+float readPressure() {
+  long arr[2];
+  long output_P;
+  float P = 0;
+  Wire.requestFrom(40, 2);
   int i = 0;
   while (Wire.available()) {
     arr[i] = (long)Wire.read();
@@ -165,57 +143,47 @@ void readPressure() {
   }
   
   output_P = ((arr[0] & 0x3F) << 8) | arr[1];
-  output_T = (arr[2] << 3) | (arr[3] >> 5);
 
   // calculate pressure value
   P = ((output_P - OUTPUT_MIN) * (PRESSURE_MAX - PRESSURE_MIN)) / (OUTPUT_MAX - OUTPUT_MIN) 
         + PRESSURE_MIN + CALIBRATION_OFFSET;
 
-  // calculate temperature value
-  T = ((output_T * 200) / 2047) - 50;
-
   // print to serial monitor
-  printReadings();
+  printReadings(output_P, P);
 
-  // construct message to send
-  String s = String(P, DECIMALS);
-  String s_t = String(T, DECIMALS);
-  s.concat(s_t);
-  s.toCharArray(sendMsg, BUFSIZE);
+  return P;
 }
 
 
 // print readings from sensor
-void printReadings() {
-  Serial.println(n);
-
+void printReadings(long output_P, float P) {
   Serial.print(output_P, HEX);
   Serial.print("    ");
   Serial.println(P, DECIMALS);
 
-  Serial.print(output_T, HEX);
-  Serial.print("    ");
-  Serial.println(T, DECIMALS);
-
   Serial.println();
-  Serial.println();
-
-  n++;
 }
 
 
 // send the given message through bluetooth
-void sendMsg() {
+void sendMsg(float P) {
   // Send characters to Bluefruit
+  
+  // construct message to send
+  char msg[BUFSIZE+1];
+  String s = String(P, DECIMALS);
+  s.toCharArray(msg, BUFSIZE);
+  s.concat("\n");
+  
   Serial.print("[Send] ");
-  Serial.println(sendMsg);
+  Serial.println(msg);
 
   ble.print("AT+BLEUARTTX=");
-  ble.println(sendMsg);
+  ble.println(msg);
 
   // check response stastus
   if (! ble.waitForOK() ) {
-    Serial.println(F("Failed to send?"));
+    Serial.println("Failed to send?");
   }
 }
 
@@ -229,7 +197,7 @@ bool checkMsg() {
     return false;
   }
   // Some data was found, its in the buffer
-  Serial.print(F("[Recv] ")); Serial.println(ble.buffer);
+  Serial.print("[Recv] "); Serial.println(ble.buffer);
   ble.waitForOK();
   return true;
 }
