@@ -8,9 +8,7 @@
 #define DECIMALS 4
 #define CALIBRATION_OFFSET 0.0553  
 #define VALVE_PIN 11
-#define SENSOR_PIN 10
 #define PUMP_PIN 9
-// figure out some way to do this automatically
 
 
 /*************************** From bleuart example ************************/
@@ -46,7 +44,6 @@ void setup() {
   Wire.begin();
   Serial.begin(9600);
   pinMode(PUMP_PIN, OUTPUT);
-  pinMode(SENSOR_PIN, OUTPUT);
   pinMode(VALVE_PIN, OUTPUT);
   
 
@@ -96,16 +93,12 @@ void setup() {
 
 }
 
-
 void loop() {
   if (checkMsg()) {
-    closeValve();
-    delay(100);
     for (int i = 0; i < 3; i++) {
       float P = pumpUp(1500, 1000);
       sendMsg(P);
     }
-    delay(2000);
     openValve();
     delay(10000);
   }
