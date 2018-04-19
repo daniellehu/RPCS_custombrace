@@ -4,6 +4,7 @@
 
 Custom_Brace cb;
 float refP = 3.0;
+
 void setup() {
   Serial.begin(9600);
   while(!Serial);
@@ -15,52 +16,61 @@ void setup() {
 
 void loop() {
   float readP = cb.checkMsg();
-  if(readP !=-1){
+  float curP = 0;
+  
+  if(readP > 0){
     refP= readP;
-    }
-    
+    Serial.print("Reference pressure received: ");
+    Serial.println(refP);
+  }
   else{
-  Serial.print("no Pressure received: ");
+    Serial.println("Default pressure: 3.0");
   }
   
-  float curP = 0;
   //Serial.print("zero P: ");
   //Serial.println(curP);
   for (int i = 0; i < 8; i++)
   {
-  curP = curP + cb.readPressure();
-  //Serial.print("Addition Pressure: ");
-  //Serial.println(curP);
+    curP = curP + cb.readPressure();
+    //Serial.print("Addition Pressure: ");
+    //Serial.println(curP);
   }
   curP = curP/8;
-  Serial.print("Final Pressure: ");
+  Serial.print("Starting pressure: ");
   Serial.println(curP);
   int result;
   if (refP > 0) {
     result = inRange(curP, refP);
     while (result != 0) {
-      Serial.print("Current Pressure: ");
-      Serial.println(curP);
+//      Serial.print("Current Pressure: ");
+//      Serial.println(curP);
       if (result > 0) {
         // deflate
         cb.openValve(200);
       }
-      else {
+      else if (result < 0) {
         // inflate
         cb.pumpUp(200, 0);
       }
+      else {
+        break;
+      }
       curP = 0;
-      for (int i = 0; i < 8; i++)
-      {
-      curP = curP + cb.readPressure();
+      for (int i = 0; i < 8; i++) {
+        curP = curP + cb.readPressure();
       }
       curP = curP/8;
+//      Serial.print("Regulating, current pressure: ");
+//      Serial.println(curP);
       result = inRange(curP, refP);
     }
     Serial.println("Done regulating.");
+    Serial.print("Final Pressure: ");
+    Serial.println(curP);
     Serial.println();
     Serial.println();
   }
+  delay(5000);
 }
 
 int inRange(float curP, float refP) {
