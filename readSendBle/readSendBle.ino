@@ -95,12 +95,15 @@ void setup() {
 
 void loop() {
   if (checkMsg()) {
-    for (int i = 0; i < 3; i++) {
-      float P = pumpUp(1500, 1000);
+    for (int i = 0; i < 1; i++) {
+      float P = pumpUp(3000, 0);
       sendMsg(P);
     }
-    openValve();
-    delay(10000);
+    for (int j = 0; j < 1; j++) {
+      openValve();
+      Serial.println("Opening valve");
+      delay(10000);
+    }
   }
   delay(100);
 }

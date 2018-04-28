@@ -111,9 +111,7 @@ float Custom_Brace::readPressure(int n) {
 }
 
 // send the pressure value through bluetooth
-bool Custom_Brace::sendMsg(float P) {
-  char msg[BUFSIZE+1];
-  sprintf(msg, "%f", P);
+bool Custom_Brace::sendMsg(char msg[]) {
 
   ble.print("AT+BLEUARTTX=");
   ble.println(msg);
