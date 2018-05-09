@@ -95,7 +95,7 @@ void setup() {
 
 void loop() {
   if (checkMsg()) {
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 2; i++) {
       float P = pumpUp(3000, 0);
       sendMsg(P);
     }

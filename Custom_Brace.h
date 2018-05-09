@@ -98,7 +98,7 @@ class Custom_Brace {
     float readPressure(int n = 1);
 
     // send the pressure value through bluetooth
-    bool sendMsg(float P);
+    bool sendMsg(char msg[]);
 
     // check for incoming command (reference pressure)
     float checkMsg();

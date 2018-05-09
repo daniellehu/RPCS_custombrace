@@ -26,7 +26,7 @@ enum STATUS {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Wire.requestFrom(40, 2);
+  Wire.requestFrom(40, 4);
   Serial.println(n);
   int i = 0;
   while (Wire.available()) {
@@ -35,22 +35,22 @@ void loop() {
   }
   
   output_P = ((arr[0] & 0x3F) << 8) | arr[1];
-//  output_T = (arr[2] << 3) | (arr[3] >> 5);
+  output_T = (arr[2] << 3) | (arr[3] >> 5);
 
   // calculate pressure value
   P = ((output_P - OUTPUT_MIN) * (PRESSURE_MAX - PRESSURE_MIN)) / (OUTPUT_MAX - OUTPUT_MIN) 
         + PRESSURE_MIN + CALIBRATION_OFFSET;
-//
-//  // calculate temperature value
-//  T = ((output_T * 200) / 2047) - 50;
+
+  // calculate temperature value
+  T = ((output_T * 200) / 2047) - 50;
 
 
   Serial.print(output_P, HEX);
   Serial.print("    ");
   Serial.println(P, DECIMALS);
-//  Serial.print(output_T, HEX);
-//  Serial.print("    ");
-//  Serial.println(T, DECIMALS);
+  Serial.print(output_T, HEX);
+  Serial.print("    ");
+  Serial.println(T, DECIMALS);
   Serial.println();
   Serial.println();
   n++;
