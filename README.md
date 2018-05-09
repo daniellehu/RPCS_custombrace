@@ -31,3 +31,5 @@ The code used in the final demo can be found in Control2 folder. This can be loa
     * motor - Code to operate motor
     * readSendBle - Simulating a regulation process with bluetooth reporting (no control loop)
     * valve - Code to operate valve
+
+* CustomBrace (.h, .cpp) is a library we created for easiser operation of the HW components
